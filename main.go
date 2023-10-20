@@ -3,12 +3,14 @@ package main
 import (
 	"fmt"
 	"os"
+
+	"github.com/phucthuan1st/simplified-blockchain/cmd"
 )
 
 func main() {
 
 	for {
-		printMainMenu()
+		cmd.PrintMainMenu()
 
 		var choice int
 		fmt.Print("Select an option: ")
@@ -20,9 +22,9 @@ func main() {
 
 		switch choice {
 		case 1:
-			createNewChainMenu()
+			cmd.CreateNewChainMenu()
 		case 2:
-			loadChainMenu()
+			cmd.LoadChainMenu()
 		case 3:
 			os.Exit(0)
 		default:

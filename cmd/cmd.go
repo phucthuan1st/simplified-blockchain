@@ -1,4 +1,4 @@
-package main
+package cmd
 
 import (
 	"bufio"
@@ -10,7 +10,7 @@ import (
 	"github.com/phucthuan1st/simplified-blockchain/pkg"
 )
 
-func printMainMenu() {
+func PrintMainMenu() {
 	fmt.Printf("\x1bc")
 	fmt.Println("Main Menu:")
 	fmt.Println("--------------- Menu ----------------")
@@ -20,16 +20,17 @@ func printMainMenu() {
 	fmt.Println("-------------------------------------")
 }
 
-func printSubMenu(menuTitle string) {
+func PrintSubMenu(menuTitle string) {
 	fmt.Printf("%s:\n", menuTitle)
 	fmt.Println("--------------- Menu ----------------")
 	fmt.Println("1. Add a Block")
 	fmt.Println("2. Display Chain")
-	fmt.Println("3. Back to Main Menu")
+	fmt.Println("3. Save current chain")
+	fmt.Println("4. Back to Main Menu")
 	fmt.Println("-------------------------------------")
 }
 
-func createNewChainMenu() {
+func CreateNewChainMenu() {
 	running := true
 	fmt.Print("Enter an identifier for the new chain: ")
 	var identifier string
@@ -39,7 +40,7 @@ func createNewChainMenu() {
 
 	for running {
 		fmt.Printf("\x1bc")
-		printSubMenu("New Chain")
+		PrintSubMenu("New Chain")
 
 		fmt.Print("Select an option: ")
 		var choice int
@@ -52,7 +53,7 @@ func createNewChainMenu() {
 		switch choice {
 		case 1:
 			// Add a block to the blockchain
-			block := createNewBlock()
+			block := CreateNewBlock()
 			block.PrevBlockHash = blockchain.GetLastBlock().Hash
 			err := blockchain.Add(block)
 			if err != nil {
@@ -61,6 +62,15 @@ func createNewChainMenu() {
 		case 2:
 			pkg.DisplayBlockchain(blockchain)
 		case 3:
+			// save current blockchain to json file
+			path := ""
+			fmt.Print("Enter path to save: ")
+			fmt.Scanf("%s", &path)
+			err := blockchain.WriteToFile(path + identifier + ".json")
+			if err != nil {
+				log.Printf("Error writing blockchain to file: %s\n", err.Error())
+			}
+		case 4:
 			// Back to the main menu
 			running = false
 		default:
@@ -74,7 +84,7 @@ func createNewChainMenu() {
 	}
 }
 
-func createNewBlock() *pkg.Block {
+func CreateNewBlock() *pkg.Block {
 	var transactions []*pkg.Transaction
 	var buffer string
 	count := 0
@@ -99,7 +109,7 @@ func createNewBlock() *pkg.Block {
 	return block
 }
 
-func loadChainMenu() {
+func LoadChainMenu() {
 	running := true
 	fmt.Print("Enter the JSON file path to load the chain from: ")
 	var filePath string
@@ -113,7 +123,7 @@ func loadChainMenu() {
 
 	for running {
 		fmt.Printf("\x1bc")
-		printSubMenu("Chain from File")
+		PrintSubMenu("Chain from File")
 
 		fmt.Print("Select an option: ")
 		var choice int
@@ -126,7 +136,12 @@ func loadChainMenu() {
 		switch choice {
 		case 1:
 			// Add a block to the blockchain
-			// You can implement this functionality
+			block := CreateNewBlock()
+			block.PrevBlockHash = blockchain.GetLastBlock().Hash
+			err := blockchain.Add(block)
+			if err != nil {
+				log.Printf("Error adding block: %v", err)
+			}
 		case 2:
 			// Display the blockchain
 			pkg.DisplayBlockchain(blockchain)
