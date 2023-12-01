@@ -3,12 +3,10 @@ package main
 import (
 	"fmt"
 	"os"
-
-	"github.com/phucthuan1st/simplified-blockchain/cmd"
+	"simplified-blockchain/cmd"
 )
 
 func main() {
-
 	for {
 		cmd.PrintMainMenu()
 

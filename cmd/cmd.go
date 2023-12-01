@@ -5,9 +5,8 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"simplified-blockchain/pkg"
 	"strings"
-
-	"github.com/phucthuan1st/simplified-blockchain/pkg"
 )
 
 func PrintMainMenu() {
