@@ -11,8 +11,8 @@ import (
 )
 
 type Block struct {
-	Transactions  []*Transaction
 	PrevBlockHash []byte
+	Transactions  []*Transaction
 	Hash          []byte
 	Timestamp     int64
 }
