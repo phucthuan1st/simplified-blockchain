@@ -30,6 +30,7 @@ func PrintSubMenu(menuTitle string) {
 	fmt.Println("-------------------------------------")
 }
 
+// TODO: working with a new chain
 func CreateNewChainMenu() {
 	fmt.Print("Enter an identifier for the new chain: ")
 	var identifier string
@@ -46,6 +47,21 @@ func CreateNewChainMenu() {
 	}
 
 	interactiveMenu(blockchain, path)
+}
+
+// TODO: load current chain from database
+func LoadChainMenu() {
+	fmt.Print("Enter the JSON file path to load the chain from: ")
+	var filePath string
+	fmt.Scanln(&filePath)
+
+	blockchain, err := pkg.ReadFromFile(filePath)
+	if err != nil {
+		fmt.Printf("Error loading blockchain from file: %v\n", err)
+		return
+	}
+
+	interactiveMenu(blockchain, filePath)
 }
 
 // TODO: this is client side forge for a block, not a backend forge
@@ -97,20 +113,7 @@ func CreateNewBlock() (*pkg.Block, error) {
 	return block, nil
 }
 
-func LoadChainMenu() {
-	fmt.Print("Enter the JSON file path to load the chain from: ")
-	var filePath string
-	fmt.Scanln(&filePath)
-
-	blockchain, err := pkg.ReadFromFile(filePath)
-	if err != nil {
-		fmt.Printf("Error loading blockchain from file: %v\n", err)
-		return
-	}
-
-	interactiveMenu(blockchain, filePath)
-}
-
+// TODO: client-side for interact with backend of a blockchain, with a place to store chain data
 func interactiveMenu(blockchain *pkg.Blockchain, filePath string) {
 	running := true
 
