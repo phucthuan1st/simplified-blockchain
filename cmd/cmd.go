@@ -31,65 +31,21 @@ func PrintSubMenu(menuTitle string) {
 }
 
 func CreateNewChainMenu() {
-	running := true
 	fmt.Print("Enter an identifier for the new chain: ")
 	var identifier string
 	fmt.Scanln(&identifier)
+
+	// save current blockchain to json file
+	path := ""
+	fmt.Print("Enter path to save: ")
+	fmt.Scanf("%s", &path)
 
 	blockchain, err := pkg.NewBlockchain(identifier)
 	if err != nil {
 		log.Printf("Error creating new blockchain: %v", err)
 	}
 
-	for running {
-		fmt.Printf("\x1bc")
-		PrintSubMenu("New Chain")
-
-		fmt.Print("Select an option: ")
-		var choice int
-		_, err := fmt.Scanf("%d", &choice)
-		if err != nil {
-			fmt.Println("Invalid input. Please enter a number.")
-			continue
-		}
-
-		switch choice {
-		case 1:
-			// Add a block to the blockchain
-			block, err := CreateNewBlock()
-
-			if err != nil {
-				log.Printf("Error creating a new block: %v", err)
-			}
-			block.PrevBlockHash = blockchain.GetLastBlock().Hash
-
-			err = blockchain.Add(block)
-			if err != nil {
-				log.Printf("Error adding block: %v", err)
-			}
-		case 2:
-			pkg.DisplayBlockchain(blockchain)
-		case 3:
-			// save current blockchain to json file
-			path := ""
-			fmt.Print("Enter path to save: ")
-			fmt.Scanf("%s", &path)
-			err := blockchain.WriteToFile(path + identifier + ".json")
-			if err != nil {
-				log.Printf("Error writing blockchain to file: %s\n", err.Error())
-			}
-		case 4:
-			// Back to the main menu
-			running = false
-		default:
-			fmt.Println("Invalid option. Please select a valid option.")
-		}
-
-		if running {
-			fmt.Print("Press Enter to continue!!")
-			fmt.Scanln()
-		}
-	}
+	interactiveMenu(blockchain, path)
 }
 
 // TODO: this is client side forge for a block, not a backend forge
@@ -127,6 +83,7 @@ func CreateNewBlock() (*pkg.Block, error) {
 		if err != nil {
 			return nil, fmt.Errorf("error creating transaction: %v", err)
 		}
+
 		transactions = append(transactions, transaction)
 	}
 
@@ -141,7 +98,6 @@ func CreateNewBlock() (*pkg.Block, error) {
 }
 
 func LoadChainMenu() {
-	running := true
 	fmt.Print("Enter the JSON file path to load the chain from: ")
 	var filePath string
 	fmt.Scanln(&filePath)
@@ -152,9 +108,15 @@ func LoadChainMenu() {
 		return
 	}
 
+	interactiveMenu(blockchain, filePath)
+}
+
+func interactiveMenu(blockchain *pkg.Blockchain, filePath string) {
+	running := true
+
 	for running {
 		fmt.Printf("\x1bc")
-		PrintSubMenu("Chain from File")
+		PrintSubMenu("New Chain")
 
 		fmt.Print("Select an option: ")
 		var choice int
@@ -168,19 +130,24 @@ func LoadChainMenu() {
 		case 1:
 			// Add a block to the blockchain
 			block, err := CreateNewBlock()
+
 			if err != nil {
 				log.Printf("Error creating a new block: %v", err)
 			}
-
 			block.PrevBlockHash = blockchain.GetLastBlock().Hash
+
 			err = blockchain.Add(block)
 			if err != nil {
 				log.Printf("Error adding block: %v", err)
 			}
 		case 2:
-			// Display the blockchain
 			pkg.DisplayBlockchain(blockchain)
 		case 3:
+			err := blockchain.WriteToFile(filePath)
+			if err != nil {
+				log.Printf("Error writing blockchain to file: %s\n", err.Error())
+			}
+		case 4:
 			// Back to the main menu
 			running = false
 		default:
