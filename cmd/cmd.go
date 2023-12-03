@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 	"simplified-blockchain/pkg"
+	"strconv"
 	"strings"
 )
 
@@ -35,7 +36,10 @@ func CreateNewChainMenu() {
 	var identifier string
 	fmt.Scanln(&identifier)
 
-	blockchain := pkg.NewBlockchain(identifier)
+	blockchain, err := pkg.NewBlockchain(identifier)
+	if err != nil {
+		log.Printf("Error creating new blockchain: %v", err)
+	}
 
 	for running {
 		fmt.Printf("\x1bc")
@@ -52,9 +56,14 @@ func CreateNewChainMenu() {
 		switch choice {
 		case 1:
 			// Add a block to the blockchain
-			block := CreateNewBlock()
+			block, err := CreateNewBlock()
+
+			if err != nil {
+				log.Printf("Error creating a new block: %v", err)
+			}
 			block.PrevBlockHash = blockchain.GetLastBlock().Hash
-			err := blockchain.Add(block)
+
+			err = blockchain.Add(block)
 			if err != nil {
 				log.Printf("Error adding block: %v", err)
 			}
@@ -83,29 +92,52 @@ func CreateNewChainMenu() {
 	}
 }
 
-func CreateNewBlock() *pkg.Block {
+// TODO: this is client side forge for a block, not a backend forge
+func CreateNewBlock() (*pkg.Block, error) {
 	var transactions []*pkg.Transaction
-	var buffer string
-	count := 0
+
+	fmt.Print("Enter the number of transactions: ")
+	scanner := bufio.NewReader(os.Stdin)
+	numTransactionsInput, _ := scanner.ReadString('\n')
+	numTransactionsInput = strings.TrimSpace(numTransactionsInput)
+
+	numTransactions, err := strconv.Atoi(numTransactionsInput)
+	if err != nil {
+		return nil, fmt.Errorf("invalid input for number of transactions: %v", err)
+	}
 
 	fmt.Println("------------ Transactions in Block ------------")
-	scanner := bufio.NewReader(os.Stdin)
 
-	for count == 0 || buffer != "" {
-		fmt.Print("Enter a transaction description (press Enter to finish): ")
-		buffer, _ = scanner.ReadString('\n')
-		buffer = strings.TrimSpace(buffer)
+	for i := 1; i <= numTransactions; i++ {
+		fmt.Printf("-- Transaction %d --\n", i)
 
-		if buffer != "" {
-			transactions = append(transactions, pkg.NewTransaction([]byte(buffer)))
-			count++
+		fmt.Print("Enter sender: ")
+		sender, _ := scanner.ReadString('\n')
+		sender = strings.TrimSpace(sender)
+
+		fmt.Print("Enter receiver: ")
+		receiver, _ := scanner.ReadString('\n')
+		receiver = strings.TrimSpace(receiver)
+
+		fmt.Print("Enter signature: ")
+		signature, _ := scanner.ReadString('\n')
+		signature = strings.TrimSpace(signature)
+
+		transaction, err := pkg.NewTransaction(sender, receiver, signature)
+		if err != nil {
+			return nil, fmt.Errorf("error creating transaction: %v", err)
 		}
+		transactions = append(transactions, transaction)
 	}
 
 	fmt.Println("---------- End Transactions in Block ----------")
 
-	block := pkg.NewBlock(transactions, nil)
-	return block
+	block, err := pkg.NewBlock(transactions, nil)
+	if err != nil {
+		return nil, fmt.Errorf("error creating block: %v", err)
+	}
+
+	return block, nil
 }
 
 func LoadChainMenu() {
@@ -135,9 +167,13 @@ func LoadChainMenu() {
 		switch choice {
 		case 1:
 			// Add a block to the blockchain
-			block := CreateNewBlock()
+			block, err := CreateNewBlock()
+			if err != nil {
+				log.Printf("Error creating a new block: %v", err)
+			}
+
 			block.PrevBlockHash = blockchain.GetLastBlock().Hash
-			err := blockchain.Add(block)
+			err = blockchain.Add(block)
 			if err != nil {
 				log.Printf("Error adding block: %v", err)
 			}

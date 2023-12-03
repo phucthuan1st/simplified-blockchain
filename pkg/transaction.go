@@ -23,7 +23,7 @@ func NewTransaction(sender, receiver, signature string) (*Transaction, error) {
 		Signature: signature,
 	}
 
-	// Convert struct to JSON
+	// Convert struct to JSON byte array
 	jsonData, err := json.Marshal(data)
 	if err != nil {
 		return nil, fmt.Errorf("error marshalling data: %v", err)

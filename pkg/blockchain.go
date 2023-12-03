@@ -2,9 +2,13 @@ package pkg
 
 import (
 	"bytes"
+	cryptoRandom "crypto/rand"
+	"crypto/sha256"
 	"encoding/json"
 	"fmt"
+	mathRandom "math/rand"
 	"os"
+	"time"
 )
 
 type Blockchain struct {
@@ -12,41 +16,66 @@ type Blockchain struct {
 }
 
 func (bc *Blockchain) Add(block *Block) error {
-	lastBlock := bc.Blocks[len(bc.Blocks)-1]
+	n := len(bc.Blocks) - 1
+	lastBlock := bc.Blocks[n]
 
 	if bytes.Equal(lastBlock.Hash, block.PrevBlockHash) {
 		bc.Blocks = append(bc.Blocks, block)
 		return nil
 	}
 
-	return fmt.Errorf("Invalid new block hash")
+	return fmt.Errorf("invalid new block hash")
 }
 
 func (bc *Blockchain) GetLastBlock() *Block {
 	return bc.Blocks[len(bc.Blocks)-1]
 }
 
-func NewBlockchain(identifier string) *Blockchain {
-
-	genesisData := []byte(identifier)
-
+func NewBlockchain(identifier string) (*Blockchain, error) {
 	// Create the Genesis block
-	genesisBlock := createGenesisBlock(genesisData)
+	genesisBlock, err := newGenesisBlock([]byte(identifier))
 
 	return &Blockchain{
 		Blocks: []*Block{genesisBlock},
-	}
+	}, err
 }
 
-func createGenesisBlock(genesisData []byte) *Block {
-	// The Genesis block has no previous block, so set PrevBlockHash to nil or an empty byte slice
-	// You can also use a predefined constant for the Genesis block's PrevBlockHash
-	emptyPrevBlockHash := []byte{}
+func newGenesisBlock(genesisData []byte) (*Block, error) {
+	if len(genesisData) == 0 {
+		genesisData, _ = generateRandomByteArray()
+	}
 
-	// Create the Genesis block
-	genesisBlock := NewBlock([]*Transaction{NewTransaction(genesisData)}, emptyPrevBlockHash)
+	genesisTransaction := Transaction{
+		Data: genesisData,
+	}
 
-	return genesisBlock
+	block := &Block{
+		Timestamp:     time.Now().Unix(),
+		Transactions:  []*Transaction{&genesisTransaction},
+		PrevBlockHash: []byte{},
+	}
+
+	// Calculate and set the block's hash
+	err := block.SetHash()
+
+	return block, err
+}
+
+func generateRandomByteArray() ([]byte, error) {
+	// Generate a random length for the byte array
+	randomLength := 16 + mathRandom.Int()%17 // minimum 16 bytes, maximum 32 bytes
+
+	// Generate a random byte array with the chosen length
+	randomBytes := make([]byte, randomLength)
+	_, err := cryptoRandom.Read(randomBytes)
+	if err != nil {
+		return nil, fmt.Errorf("error generating random bytes: %v", err)
+	}
+
+	// Create a SHA-256 hash of the random byte array
+	hashedBytes := sha256.Sum256(randomBytes)
+
+	return hashedBytes[:], nil
 }
 
 func (bc *Blockchain) WriteToFile(filename string) error {
