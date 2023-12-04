@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"crypto/sha256"
 	"encoding/base64"
+	"encoding/binary"
 	"encoding/json"
 	"fmt"
 	"strconv"
@@ -11,10 +12,12 @@ import (
 )
 
 type Block struct {
-	PrevBlockHash []byte
-	Transactions  []*Transaction
-	Hash          []byte
-	Timestamp     int64
+	Timestamp          int64
+	Transactions       []*Transaction
+	PrevBlockHash      []byte
+	Hash               []byte
+	Nonce              int
+	MerkleRootChecksum []byte
 }
 
 func (b *Block) SetHash() error {
@@ -36,17 +39,36 @@ func (b *Block) SetHash() error {
 	return nil
 }
 
-func NewBlock(transactions []*Transaction, prevBlockHash []byte) (*Block, error) {
+func NewBlock(transactions []*Transaction, prevBlockHash []byte) *Block {
 	block := &Block{
 		Timestamp:     time.Now().Unix(),
 		Transactions:  transactions,
 		PrevBlockHash: prevBlockHash,
 		Hash:          []byte{},
+		Nonce:         0,
 	}
 
-	err := block.SetHash()
+	// err := block.SetHash()
+	// Calculate and set the block's hash
+	pow := NewProofOfWork(block)
+	nonce, hash := pow.MakeProofOfWork()
 
-	return block, err
+	block.Hash = hash[:]
+	block.Nonce = nonce
+	// Calculate and set the Merkle root checksum
+	block.MerkleRootChecksum = block.CalculateMerkleRootChecksum()
+	return block
+}
+
+// convert so nguyen 64bit -> byte.
+func int64ToBytes(n int64) []byte {
+	bytes := make([]byte, 8)
+	binary.BigEndian.PutUint64(bytes, uint64(n))
+	return bytes
+}
+
+func IntToHex(n int64) []byte {
+	return []byte(fmt.Sprintf("%x", n))
 }
 
 func DisplayBlock(b *Block) {
@@ -69,5 +91,11 @@ func DisplayBlock(b *Block) {
 
 	hash := base64.StdEncoding.EncodeToString(b.Hash)
 	fmt.Printf("Hash: %v \n", hash)
+
+	if len(b.PrevBlockHash) != 0 {
+		pow := NewProofOfWork(b)
+		fmt.Printf("PoW: %s\n", strconv.FormatBool(pow.Validate_Block()))
+	}
+
 	fmt.Println("------------- End Block --------------")
 }

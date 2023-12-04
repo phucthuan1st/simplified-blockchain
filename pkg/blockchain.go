@@ -72,7 +72,7 @@ func generateRandomByteArray() ([]byte, error) {
 		return nil, fmt.Errorf("error generating random bytes: %v", err)
 	}
 
-	// Create a SHA-256 hash of the random byte array
+	// Create an SHA-256 hash of the random byte array
 	hashedBytes := sha256.Sum256(randomBytes)
 
 	return hashedBytes[:], nil

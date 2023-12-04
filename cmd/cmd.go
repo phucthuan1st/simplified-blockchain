@@ -105,7 +105,8 @@ func CreateNewBlock() (*pkg.Block, error) {
 
 	fmt.Println("---------- End Transactions in Block ----------")
 
-	block, err := pkg.NewBlock(transactions, nil)
+	//block, err := pkg.NewBlock(transactions, nil)
+	block := pkg.NewBlock(transactions, nil)
 	if err != nil {
 		return nil, fmt.Errorf("error creating block: %v", err)
 	}
@@ -123,7 +124,7 @@ func interactiveMenu(blockchain *pkg.Blockchain, filePath string) {
 
 		fmt.Print("Select an option: ")
 		var choice int
-		_, err := fmt.Scanf("%d", &choice)
+		_, err := fmt.Scanf("%d\n", &choice)
 		if err != nil {
 			fmt.Println("Invalid input. Please enter a number.")
 			continue
