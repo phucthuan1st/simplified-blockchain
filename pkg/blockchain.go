@@ -1,7 +1,6 @@
 package pkg
 
 import (
-	"bytes"
 	cryptoRandom "crypto/rand"
 	"crypto/sha256"
 	"encoding/json"
@@ -19,12 +18,13 @@ func (bc *Blockchain) Add(block *Block) error {
 	n := len(bc.Blocks) - 1
 	lastBlock := bc.Blocks[n]
 
-	if bytes.Equal(lastBlock.Hash, block.PrevBlockHash) {
+	if ValidateBlockIntegrity(block) {
+		block.PrevBlockHash = lastBlock.Hash
 		bc.Blocks = append(bc.Blocks, block)
 		return nil
 	}
 
-	return fmt.Errorf("invalid new block hash")
+	return fmt.Errorf("invalid new block hash: transaction not integrity")
 }
 
 func (bc *Blockchain) GetLastBlock() *Block {
@@ -101,10 +101,4 @@ func ReadFromFile(filename string) (*Blockchain, error) {
 	}
 
 	return &blockchain, nil
-}
-
-func DisplayBlockchain(bc *Blockchain) {
-	for _, b := range bc.Blocks {
-		DisplayBlock(b)
-	}
 }

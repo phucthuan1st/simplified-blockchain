@@ -1,8 +1,8 @@
 package pkg
 
 import (
+	"bytes"
 	"crypto/sha256"
-	"encoding/hex"
 )
 
 // MerkleNode represents a node in the Merkle tree.
@@ -14,32 +14,41 @@ type MerkleNode struct {
 
 // MerkleTree represents a Merkle tree.
 type MerkleTree struct {
-	Root *MerkleNode
+	RootChecksum []byte
+}
+
+// GetMerkleRoot returns the root hash of the Merkle tree.
+func (mt *MerkleTree) GetMerkleRootChecksum() []byte {
+	return mt.RootChecksum
 }
 
 // NewMerkleTree constructs a Merkle tree from transaction data.
-func NewMerkleTree(transactions [][]byte) *MerkleTree {
+func NewMerkleTree(Transactions []*Transaction) *MerkleTree {
 	var nodes []MerkleNode
-	// Create leaf nodes from transaction data
-	for _, txData := range transactions {
-		node := MerkleNode{Data: txData}
+
+	// Create leaf nodes from transactions data
+	for _, Tx := range Transactions {
+		node := MerkleNode{Data: Tx.Data}
 		nodes = append(nodes, node)
 	}
-	// Build the Merkle tree
-	root := buildTree(nodes)
-	return &MerkleTree{Root: &root[0]}
+
+	// Build the Merkle tree by calculating root value
+	tree := buildTree(nodes)
+
+	return tree
 }
 
 // buildTree constructs the Merkle tree using a bottom-up approach.
-func buildTree(nodes []MerkleNode) []MerkleNode {
-	// If the number of nodes is odd, replicate the last node
-	if len(nodes)%2 != 0 {
-		lastNode := nodes[len(nodes)-1]
-		nodes = append(nodes, lastNode)
-	}
-	var newLevel []MerkleNode
+func buildTree(nodes []MerkleNode) *MerkleTree {
+
 	for len(nodes) > 1 {
-		newLevel = nil // Clear newLevel slice
+		var level []MerkleNode
+
+		// If the number of nodes is odd, replicate the last node
+		if len(nodes)%2 != 0 {
+			lastNode := nodes[len(nodes)-1]
+			nodes = append(nodes, lastNode)
+		}
 
 		// Combine nodes in pairs to create higher-level nodes
 		for i := 0; i < len(nodes); i += 2 {
@@ -51,12 +60,13 @@ func buildTree(nodes []MerkleNode) []MerkleNode {
 			if i+1 < len(nodes) {
 				node.Right = &nodes[i+1]
 			}
-			newLevel = append(newLevel, node)
+			level = append(level, node)
 		}
 		// Move to the next level in the tree
-		nodes = newLevel
+		nodes = level
 	}
-	return nodes
+
+	return &MerkleTree{RootChecksum: nodes[0].Data}
 }
 
 // concatenateAndHash combines two byte slices and computes their SHA-256 hash.
@@ -65,12 +75,8 @@ func concatenateAndHash(left, right []byte) []byte {
 	return hash[:]
 }
 
-// GetMerkleRoot returns the root hash of the Merkle tree.
-func (mt *MerkleTree) GetMerkleRoot() string {
-	return hex.EncodeToString(mt.Root.Data)
-}
+func ValidateBlockIntegrity(b *Block) bool {
+	merkleRootChecksum := NewMerkleTree(b.Transactions).GetMerkleRootChecksum()
 
-// GetMerkleRootData returns the root node's data of the Merkle tree.
-func (mt *MerkleTree) GetMerkleRootData() []byte {
-	return mt.Root.Data
+	return bytes.Equal(merkleRootChecksum, b.MerkleRootChecksum)
 }

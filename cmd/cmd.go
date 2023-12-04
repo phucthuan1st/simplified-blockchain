@@ -2,6 +2,8 @@ package cmd
 
 import (
 	"bufio"
+	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"log"
 	"os"
@@ -106,7 +108,7 @@ func CreateNewBlock() (*pkg.Block, error) {
 	fmt.Println("---------- End Transactions in Block ----------")
 
 	//block, err := pkg.NewBlock(transactions, nil)
-	block := pkg.NewBlock(transactions, nil)
+	block, err := pkg.NewBlock(transactions, nil)
 	if err != nil {
 		return nil, fmt.Errorf("error creating block: %v", err)
 	}
@@ -145,7 +147,7 @@ func interactiveMenu(blockchain *pkg.Blockchain, filePath string) {
 				log.Printf("Error adding block: %v", err)
 			}
 		case 2:
-			pkg.DisplayBlockchain(blockchain)
+			DisplayBlockchain(blockchain)
 		case 3:
 			err := blockchain.WriteToFile(filePath)
 			if err != nil {
@@ -163,4 +165,80 @@ func interactiveMenu(blockchain *pkg.Blockchain, filePath string) {
 			fmt.Scanln()
 		}
 	}
+}
+
+// PrintCommandOutline prints an outline of available commands and their descriptions.
+func PrintCommandOutline() {
+	fmt.Println("Usage:")
+	fmt.Println("No flag        --> Interactive mode")
+	fmt.Println("--help         --> Display command outline")
+	fmt.Println("--show         --> Display all blocks from the current chain database")
+	fmt.Println("--addblock     --> Create a new block and add it to the chain")
+	fmt.Println("\nOptional Flags:")
+	fmt.Println("--db pathToDBFile  --> Specify the path to the database file (default: ./data/mychain.json)")
+}
+
+func DisplayBlockchain(bc *pkg.Blockchain) {
+	for i, b := range bc.Blocks {
+		fmt.Println("--------------- Block ----------------")
+		DisplayBlockData(b)
+
+		if i == 0 || (i != 0 && pkg.ValidateBlockIntegrity(b)) {
+			fmt.Printf("Block has GOOD integrity!\n")
+		} else {
+			fmt.Printf("Block has BAD integrity!\n")
+		}
+
+		fmt.Println("------------- End Block --------------")
+	}
+}
+
+func DisplayBlockData(b *pkg.Block) {
+	fmt.Printf("Timestamp: %d \n", b.Timestamp)
+
+	prevHash := base64.StdEncoding.EncodeToString(b.PrevBlockHash)
+	fmt.Printf("Previous Block Hash: %v \n", prevHash)
+
+	fmt.Println("Transactions: ")
+	for i, tx := range b.Transactions {
+		var transactionDetails pkg.TransactionData
+		err := json.Unmarshal(tx.Data, &transactionDetails)
+
+		if err != nil {
+			fmt.Printf("\tGenesis Block: %v \n", string(tx.Data))
+		} else {
+			fmt.Printf("\tTransaction %d: %v\n", i, transactionDetails)
+		}
+	}
+
+	hash := base64.StdEncoding.EncodeToString(b.Hash)
+	fmt.Printf("Hash: %v \n", hash)
+
+	merkleRootChecksum := base64.StdEncoding.EncodeToString(b.MerkleRootChecksum)
+	fmt.Printf("MerkleRootChecksum: %v\n", merkleRootChecksum)
+}
+
+func LoadChainData(filePath string) (*pkg.Blockchain, error) {
+	fmt.Printf("Try loading the blockchain data from %v\n", filePath)
+	bc, err := pkg.ReadFromFile(filePath)
+
+	if err != nil {
+		fmt.Printf("Error while reading the database: %v\n", err)
+		fmt.Printf("Create a new database in path: %v\n", filePath)
+
+		bc, err = pkg.NewBlockchain(filePath)
+
+		if err != nil {
+			fmt.Printf("Error creating new chain database: %v\n", err)
+			return nil, err
+		}
+
+		err := bc.WriteToFile(filePath)
+
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return bc, nil
 }
