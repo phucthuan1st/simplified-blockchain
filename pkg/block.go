@@ -12,11 +12,12 @@ import (
 )
 
 type Block struct {
-	Timestamp     int64
-	Transactions  []*Transaction
-	PrevBlockHash []byte
-	Hash          []byte
-	Nonce         int
+	Timestamp          int64
+	Transactions       []*Transaction
+	PrevBlockHash      []byte
+	Hash               []byte
+	Nonce              int
+	MerkleRootChecksum []byte
 }
 
 func (b *Block) SetHash() error {
@@ -54,7 +55,8 @@ func NewBlock(transactions []*Transaction, prevBlockHash []byte) *Block {
 
 	block.Hash = hash[:]
 	block.Nonce = nonce
-
+	// Calculate and set the Merkle root checksum
+	block.MerkleRootChecksum = block.CalculateMerkleRootChecksum()
 	return block
 }
 
@@ -90,8 +92,10 @@ func DisplayBlock(b *Block) {
 	hash := base64.StdEncoding.EncodeToString(b.Hash)
 	fmt.Printf("Hash: %v \n", hash)
 
-	pow := NewProofOfWork(b)
-	fmt.Printf("PoW: %s\n", strconv.FormatBool(pow.Validate()))
+	if len(b.PrevBlockHash) != 0 {
+		pow := NewProofOfWork(b)
+		fmt.Printf("PoW: %s\n", strconv.FormatBool(pow.Validate_Block()))
+	}
 
 	fmt.Println("------------- End Block --------------")
 }

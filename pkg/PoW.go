@@ -27,7 +27,7 @@ func NewProofOfWork(b *Block) *ProofOfWork {
 }
 
 // HashTransactions hashes the block's transactions
-func (b *Block) HashTransactions() []byte {
+func (b *Block) CalculateMerkleRootChecksum() []byte {
 	var transactions [][]byte
 	for _, tx := range b.Transactions {
 		txJSON, err := json.Marshal(tx)
@@ -37,17 +37,17 @@ func (b *Block) HashTransactions() []byte {
 		transactions = append(transactions, txJSON)
 	}
 	merkleTree := NewMerkleTree(transactions)
-	RootNode := merkleTree.GetMerkleRootData()
-	return RootNode
+	rootData := merkleTree.GetMerkleRootData()
+	// b.MerkleRootChecksum = rootData
+	return rootData
 }
 
 // chuan bi data de hash.
-
 func (pow *ProofOfWork) prepareData(nonce int) []byte {
 	data := bytes.Join(
 		[][]byte{
 			pow.block.PrevBlockHash,
-			pow.block.HashTransactions(),
+			pow.block.CalculateMerkleRootChecksum(),
 			int64ToBytes(pow.block.Timestamp),
 			int64ToBytes(int64(targetBits)),
 			int64ToBytes(int64(nonce)),
@@ -79,8 +79,8 @@ func (pow *ProofOfWork) MakeProofOfWork() (int, []byte) {
 	return nonce, hash[:]
 }
 
-// ham validate
-func (pow *ProofOfWork) Validate() bool {
+/*// ham validate
+func (pow *ProofOfWork) Validate_PoW() bool {
 	var hashInt big.Int
 
 	data := pow.prepareData(pow.block.Nonce)
@@ -90,4 +90,13 @@ func (pow *ProofOfWork) Validate() bool {
 	isValid := hashInt.Cmp(pow.target) == -1 // ktr nho hon
 
 	return isValid
+}*/
+
+// ham validate
+func (b *Block) Validate() bool {
+	return bytes.Equal(b.CalculateMerkleRootChecksum(), b.MerkleRootChecksum)
+}
+
+func (pow *ProofOfWork) Validate_Block() bool {
+	return pow.block.Validate()
 }
